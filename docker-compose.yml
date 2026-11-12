@@ -30,6 +30,7 @@ services:
       interval: 1m
       timeout: 10s
       retries: 3
+      start_period: 10m
 
   playit:
     image: ghcr.io/playit-cloud/playit-agent:1.0
@@ -50,7 +51,8 @@ services:
     image: itzg/mc-backup
     container_name: mc-backup
     depends_on:
-      - minecraft
+      minecraft:
+        condition: service_healthy
     environment:
       BACKUP_INTERVAL: "6h"
       INITIAL_DELAY: "2m"
