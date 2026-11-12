@@ -1,0 +1,64 @@
+services:
+  minecraft:
+    # CHANGE PER PACK:
+    # Java version tag matters! Check what MC/Forge version the pack needs:
+    #   e.g. Forge 1.12.2 => itzg/minecraft-server:java8
+    image: itzg/minecraft-server:java8
+    container_name: mc-server
+    environment:
+      EULA: "true"
+      TYPE: "AUTO_CURSEFORGE"
+      CF_SLUG: "CHANGE-ME"          # e.g. "skyfactory-4", check the URL slug on curseforge.com
+      CF_API_KEY: "${CF_API_KEY}"   # same key works across all packs, no need to regenerate for pack switching
+      MEMORY: "8G"                  # adjust per pack weight; check "free -h" on host terminal first (or whatever your OS equivalent of it is)
+      USE_AIKAR_FLAGS: "true"
+      RCON_PASSWORD: "${RCON_PASSWORD}"
+      TZ: "${TIMEZONE:-UTC}"        # defaults to UTC if timezone is not explicitly set in .env
+    ports:
+      - "127.0.0.1:25565:25565"
+    volumes:
+      - ./data:/data
+      - ${LOG_PATH}:/data/logs      # set LOG_PATH in .env, larger drive recommended if available (mine's pointed at a HDD)
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "mc-monitor", "status", "--host", "localhost", "--port", "25565"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+
+  playit:
+    image: ghcr.io/playit-cloud/playit-agent:1.0
+    container_name: playit
+    network_mode: host
+    environment:
+      SECRET_KEY: "${SECRET_KEY}"
+    restart: unless-stopped
+    volumes:
+      - ./playit-data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backup:
+    image: itzg/mc-backup
+    container_name: mc-backup
+    depends_on:
+      - minecraft
+    environment:
+      BACKUP_INTERVAL: "6h"
+      INITIAL_DELAY: "2m"
+      PRUNE_BACKUPS_DAYS: "7"
+      RCON_HOST: minecraft
+      RCON_PASSWORD: "${RCON_PASSWORD}"
+      TZ: "${TIMEZONE:-UTC}"
+    volumes:
+      - ./data:/data:ro
+      - ${BACKUP_PATH}:/backups    # set BACKUP_PATH in .env, same deal as LOG_PATH
+    restart: unless-stopped
