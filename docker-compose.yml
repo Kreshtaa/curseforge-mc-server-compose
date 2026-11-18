@@ -14,8 +14,6 @@ services:
       USE_AIKAR_FLAGS: "true"
       RCON_PASSWORD: "${RCON_PASSWORD}"
       TZ: "${TIMEZONE:-UTC}"        # defaults to UTC if timezone is not explicitly set in .env
-    ports:
-      - "127.0.0.1:25565:25565"
     volumes:
       - ./data:/data
       - ${LOG_PATH}:/data/logs      # set LOG_PATH in .env, larger drive recommended if available (mine's pointed at a HDD)
@@ -37,7 +35,9 @@ services:
     # Check https://github.com/playit-cloud/playit-agent/ to see the currently supported versions and their details.
     image: ghcr.io/playit-cloud/playit-agent:2.0
     container_name: playit
-    network_mode: host
+    # Note: Official documentation recommends 'network_mode: host' - I have set it to service:minecraft to avoid giving
+    # the agent access to the local network beyond what it needs.
+    network_mode: service:minecraft    # WARNING: If the minecraft service crashes or restarts, restart playit too with 'docker compose restart playit' to avoid networking issues due to the shared networking stack.
     environment:
       SECRET_KEY: "${SECRET_KEY}"
     restart: unless-stopped
