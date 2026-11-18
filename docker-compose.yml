@@ -42,7 +42,7 @@ services:
       SECRET_KEY: "${SECRET_KEY}"
     restart: unless-stopped
     volumes:
-      - ./playit-data:/data
+      - ./playit-data:/var/lib/playit
     logging:
       driver: json-file
       options:
